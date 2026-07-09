@@ -6,7 +6,7 @@ pool:
 
 variables:
   terraformVersion: '1.6.6'
-  azureServiceConnection: 'Azure-Service-Connection'
+  azureServiceConnection: 'devops-project'
 
 stages:
 - stage: Infrastructure

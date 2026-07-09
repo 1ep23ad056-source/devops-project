@@ -1,0 +1,55 @@
+trigger:
+- main
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  terraformVersion: '1.6.6'
+  azureServiceConnection: 'Azure-Service-Connection'
+
+stages:
+- stage: Infrastructure
+  displayName: Deploy Infrastructure
+
+  jobs:
+  - job: Terraform
+    displayName: Terraform Deployment
+
+    steps:
+    - checkout: self
+
+    - task: TerraformInstaller@1
+      inputs:
+        terraformVersion: $(terraformVersion)
+
+    - task: TerraformTaskV4@4
+      displayName: Terraform Init
+      inputs:
+        provider: azurerm
+        command: init
+        workingDirectory: terraform
+        backendServiceArm: $(devops-project)
+
+    - task: TerraformTaskV4@4
+      displayName: Terraform Validate
+      inputs:
+        provider: azurerm
+        command: validate
+        workingDirectory: terraform
+
+    - task: TerraformTaskV4@4
+      displayName: Terraform Plan
+      inputs:
+        provider: azurerm
+        command: plan
+        workingDirectory: terraform
+        environmentServiceNameAzureRM: $(devops-project)
+
+    - task: TerraformTaskV4@4
+      displayName: Terraform Apply
+      inputs:
+        provider: azurerm
+        command: apply
+        workingDirectory: terraform
+        environmentServiceNameAzureRM: $(devops-project)

@@ -1,55 +1,51 @@
 trigger:
-- main
+- main   # or your branch name
 
 pool:
-  vmImage: ubuntu-latest
+  vmImage: 'ubuntu-latest'
 
-variables:
-  terraformVersion: '1.6.6'
-  azureServiceConnection: 'devops-project'
+steps:
+# Step 1: Install Terraform
+- task: TerraformInstaller@0
+  inputs:
+    terraformVersion: '1.5.7'
 
-stages:
-- stage: Infrastructure
-  displayName: Deploy Infrastructure
+# Step 2: Terraform Init
+- task: TerraformTaskV4@4
+  inputs:
+    provider: 'azurerm'
+    command: 'init'
+    workingDirectory: '$(System.DefaultWorkingDirectory)'
+    backendServiceArm: 'devops-project'
+    backendAzureRmResourceGroupName: '<Your-Backend-RG>'
+    backendAzureRmStorageAccountName: '<Your-Storage-Account>'
+    backendAzureRmContainerName: '<Your-Container>'
+    backendAzureRmKey: 'terraform.tfstate'
 
-  jobs:
-  - job: Terraform
-    displayName: Terraform Deployment
+# Step 3: Terraform Validate
+- task: TerraformTaskV4@4
+  inputs:
+    provider: 'azurerm'
+    command: 'validate'
+    workingDirectory: '$(System.DefaultWorkingDirectory)'
 
-    steps:
-    - checkout: self
+# Step 4: Terraform Plan
+- task: TerraformTaskV4@4
+  inputs:
+    provider: 'azurerm'
+    command: 'plan'
+    workingDirectory: '$(System.DefaultWorkingDirectory)'
+    environmentServiceNameAzureRM: 'devops-project'
+    vars: |
+      -var-file=terraform.tfvars
 
-    - task: TerraformInstaller@1
-      inputs:
-        terraformVersion: $(terraformVersion)
-
-    - task: TerraformTaskV4@4
-      displayName: Terraform Init
-      inputs:
-        provider: azurerm
-        command: init
-        workingDirectory: terraform
-        backendServiceArm: $(devops-project)
-
-    - task: TerraformTaskV4@4
-      displayName: Terraform Validate
-      inputs:
-        provider: azurerm
-        command: validate
-        workingDirectory: terraform
-
-    - task: TerraformTaskV4@4
-      displayName: Terraform Plan
-      inputs:
-        provider: azurerm
-        command: plan
-        workingDirectory: terraform
-        environmentServiceNameAzureRM: $(devops-project)
-
-    - task: TerraformTaskV4@4
-      displayName: Terraform Apply
-      inputs:
-        provider: azurerm
-        command: apply
-        workingDirectory: terraform
-        environmentServiceNameAzureRM: $(devops-project)
+# Step 5: Terraform Apply
+- task: TerraformTaskV4@4
+  inputs:
+    provider: 'azurerm'
+    command: 'apply'
+    workingDirectory: '$(System.DefaultWorkingDirectory)'
+    environmentServiceNameAzureRM: 'devops-project'
+    vars: |
+      -var-file=terraform.tfvars
+    args: '-auto-approve'
